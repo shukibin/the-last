@@ -1,6 +1,6 @@
 import { Ollama } from 'ollama';
 
-const ollama = new Ollama({ host: 'http://127.0.0.1:11434' });
+const ollama = new Ollama({ host: 'http://host.docker.internal:11434' });
 const MODEL = 'qwen2.5-coder:14b';
 
 export type Message = {

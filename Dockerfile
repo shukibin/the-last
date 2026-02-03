@@ -10,13 +10,10 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Ollama (Official Script)
-RUN curl -fsSL https://ollama.com/install.sh | sh
-
 # Configure Environment
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
-    OLLAMA_HOST=127.0.0.1:11434
+    OLLAMA_HOST=host.docker.internal:11434
 
 WORKDIR /app
 

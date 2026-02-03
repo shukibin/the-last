@@ -8,9 +8,9 @@
     "start": "tsx src/main.ts",
     "build": "tsc",
     "lint": "eslint src/**/*.ts",
-    "go": "docker build -t the-last . && docker run -it --rm -v $(pwd)/src:/app/src -v $(pwd)/workspace:/app/workspace -v last-models:/root/.ollama the-last",
+    "go": "docker build -t the-last . && docker run -it --rm -v $(pwd)/src:/app/src -v $(pwd)/workspace:/app/workspace the-last",
     "docker:build": "docker build -t the-last .",
-    "docker:run": "docker run -it --rm -v $(pwd)/src:/app/src -v $(pwd)/workspace:/app/workspace -v last-models:/root/.ollama the-last"
+    "docker:run": "docker run -it --rm -v $(pwd)/src:/app/src -v $(pwd)/workspace:/app/workspace the-last"
   },
   "dependencies": {
     "chalk": "^5.3.0",
