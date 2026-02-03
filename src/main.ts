@@ -101,8 +101,16 @@ async function main() {
 
                 console.log(chalk.dim(`Result: ${toolResult.slice(0, 100)}...`));
 
+                // SMART MEMORY: Truncate large outputs but tell agent full data is available
+                const MAX_OUTPUT = 3000;
+                let truncatedResult = toolResult;
+                if (toolResult.length > MAX_OUTPUT) {
+                    truncatedResult = toolResult.slice(0, MAX_OUTPUT) +
+                        `\n\n[OUTPUT TRUNCATED: ${toolResult.length - MAX_OUTPUT} more chars. If you need full output, save to file and use head/tail/grep]`;
+                }
+
                 // Feed result back to agent
-                currentInput = `Tool Output: ${toolResult}`;
+                currentInput = `Tool Output: ${truncatedResult}`;
             } else {
                 // No action, no reply - treat thought as the reply
                 console.log(chalk.green('Genesis:'), response.thought || "I'm not sure how to respond.");

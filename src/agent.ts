@@ -40,8 +40,10 @@ With run_command, you have access to the entire Unix ecosystem. You can do ANYTH
 
 YOUR MEMORY:
 - Playbook: workspace/playbook.md - Your accumulated wisdom. Read it. Update it.
-- Logs: workspace/logs/ - Prior sessions. Check for incomplete tasks.
 - Skills: src/skills/ - Capabilities you've built. Reuse them.
+- Session Log: workspace/logs/ - The FULL conversation is saved here.
+  NOTE: To save tokens, only recent messages are sent to you per call.
+  If you need older context, read your session log: cat workspace/logs/<current>.md
 
 HOW YOU THINK (THE REACT LOOP):
 1. PLAN:    What is the goal? What do I already have that can help?
@@ -95,6 +97,9 @@ NEVER say "I cannot". FIND A WAY.`
         // Content might not be JSON, ignore
       }
 
+      // Smart memory: prune history after each call
+      this.pruneHistory();
+
       return content;
     } catch (error: any) {
       console.error("LLM Error:", error);
@@ -103,9 +108,10 @@ NEVER say "I cannot". FIND A WAY.`
   }
 
   pruneHistory() {
-    // 32k context allows for much longer history (~100 messages is safe)
-    if (this.history.length > 100) {
-      this.history = [this.history[0], ...this.history.slice(-50)];
+    // SMART MEMORY: Keep context short. Full conversation is in logs.
+    // Agent can request more history via: cat workspace/logs/<session>.md
+    if (this.history.length > 12) {
+      this.history = [this.history[0], ...this.history.slice(-10)];
     }
   }
 }
