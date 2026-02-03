@@ -56,7 +56,7 @@ or
         format: 'json',
         stream: false,
         options: {
-          num_ctx: 32768 // 32k context (Safe for 15GB RAM)
+          num_ctx: 16384 // 16k context (Safe for 18GB RAM)
         }
       });
       const content = response.message.content;
