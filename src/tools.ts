@@ -61,6 +61,15 @@ export const tools = {
         } catch (err: any) {
             return `Error listing files: ${err.message}`;
         }
+    },
+
+    restart: async () => {
+        console.log('[Tool] 🔄 Restarting agent to apply changes...');
+        // Give time for the message to be sent before exiting
+        setTimeout(() => {
+            process.exit(0);
+        }, 500);
+        return 'Restarting now...';
     }
 };
 

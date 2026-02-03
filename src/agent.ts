@@ -36,13 +36,18 @@ export class Agent {
          - VERIFY: Check the output strictly.
       3. CRITICAL: NEVER restart unless 'npm run build' passes cleanly.
       4. Reply in JSON format with a "thought" and an "action".
-      5. To restart yourself (to apply code changes), respond with: "I need to restart to apply changes." and exit.
+      5. To restart yourself, use the restart() tool. Do NOT run 'npm run start'.
+      
+      FILE PATHS (important!):
+      - Self-improvement code: src/skills/yourskill.ts (NOT /app/src, just src/)
+      - User files: workspace/yourfile.ext (NOT /app/workspace, just workspace/)
 
       AVAILABLE TOOLS:
       - run_command(command: string): Runs a shell command.
       - write_file(path: string, content: string): Writes a file.
       - read_file(path: string): Reads a file.
       - list_files(dir: string): Lists files.
+      - restart(): Restarts the agent to apply code changes.
       
       FORMAT:
       {
