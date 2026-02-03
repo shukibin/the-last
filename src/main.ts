@@ -1,17 +1,42 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
+import { execSync } from 'child_process';
 import { Agent } from './agent.js';
 import { tools, ToolName } from './tools.js';
 
 const agent = new Agent();
 
+// Gather startup context for the agent
+function getStartupContext(): string {
+    let context = "=== STARTUP CONTEXT ===\n";
+
+    try {
+        const playbook = execSync('cat workspace/playbook.md 2>/dev/null || echo "No playbook yet."', { encoding: 'utf-8' });
+        context += `\n--- PLAYBOOK ---\n${playbook.slice(0, 2000)}\n`;
+    } catch { context += "\n--- PLAYBOOK ---\nNot found.\n"; }
+
+    try {
+        const skills = execSync('ls -la src/skills/ 2>/dev/null || echo "No skills yet."', { encoding: 'utf-8' });
+        context += `\n--- YOUR SKILLS ---\n${skills}\n`;
+    } catch { context += "\n--- YOUR SKILLS ---\nNone yet.\n"; }
+
+    try {
+        const recentLog = execSync('ls -t workspace/logs/*.md 2>/dev/null | head -1 | xargs cat 2>/dev/null | tail -50 || echo "No logs yet."', { encoding: 'utf-8' });
+        context += `\n--- RECENT LOG (last 50 lines) ---\n${recentLog.slice(0, 1500)}\n`;
+    } catch { context += "\n--- RECENT LOG ---\nNone yet.\n"; }
+
+    context += "\n=== END CONTEXT ===\nYou are now ready. Greet the user briefly.";
+    return context;
+}
+
 async function main() {
     console.log(chalk.green.bold("Starting 'The Last' Agent..."));
 
-    // Pre-load the model
-    console.log(chalk.yellow("Loading model..."));
-    await agent.chat("System warmup - respond with: {\"thought\": \"Ready\", \"reply\": \"Model loaded.\"}");
-    console.log(chalk.green("✓ Model loaded."));
+    // Inject startup context
+    console.log(chalk.yellow("Gathering context..."));
+    const startupContext = getStartupContext();
+    await agent.chat(startupContext);
+    console.log(chalk.green("✓ Agent initialized with context."));
 
     console.log(chalk.gray("Type 'exit' to quit."));
 
