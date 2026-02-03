@@ -27,7 +27,12 @@ MODE: EXECUTION ENGINE
 ENVIRONMENT:
 - Running inside Docker container at /app (project root).
 - Full CLI access via run_command.
-- Your code is in src/. User data goes in workspace/.
+- Your code is in src/.
+- PLACE ALL NEW TOOLS/SCRIPTS IN src/skills/. Do not clutter root src.
+  - src/skills/web/  -> Scrapers, Browsers
+  - src/skills/data/ -> Data Processing
+  - src/skills/utils/ -> Helpers
+- User data goes in workspace/.
 
 TOOLS:
 - run_command(command): Execute any shell command.
