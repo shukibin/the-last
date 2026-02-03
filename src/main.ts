@@ -57,14 +57,17 @@ async function main() {
         while (turnCount < MAX_TURNS) {
             process.stdout.write(chalk.yellow("Thinking... \r"));
 
-            const responseJson = await agent.chat(currentInput);
+            let responseJson = await agent.chat(currentInput);
             let response: any;
+
+            // Strip markdown code blocks if present (LLM sometimes wraps JSON in ```json ... ```)
+            responseJson = responseJson.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
 
             try {
                 response = JSON.parse(responseJson);
             } catch {
                 console.log(chalk.red("Error parsing JSON from agent:"), responseJson);
-                currentInput = "Error: Your last response was not valid JSON. Please try again.";
+                currentInput = "Error: Your last response was not valid JSON. Please respond with ONLY raw JSON, no markdown.";
                 turnCount++;
                 continue;
             }
