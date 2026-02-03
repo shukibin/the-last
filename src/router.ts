@@ -65,6 +65,9 @@ export class ModelRouter {
     }
 
     private async callClaude(history: any[]): Promise<string> {
+        // LOG REQUEST
+        this.logger.log('API_REQ', JSON.stringify(history), { model: this.CLAUDE_MODEL });
+
         try {
             // Extract system message
             const systemMessage = history.find(m => m.role === 'system')?.content || '';
@@ -90,7 +93,7 @@ export class ModelRouter {
                 responseText = JSON.stringify(msg.content);
             }
 
-            // LOGGING
+            // LOG RESPONSE
             this.logger.log('API_CALL', responseText, {
                 model: this.CLAUDE_MODEL,
                 tokensIn: msg.usage.input_tokens,
@@ -101,6 +104,7 @@ export class ModelRouter {
             return responseText;
 
         } catch (error: any) {
+            this.logger.log('ERROR', `Claude API Error: ${error.message}`, { model: this.CLAUDE_MODEL });
             console.error("❌ Claude API Error:", error.message);
             console.log("🔄 Falling back to OpenAI (GPT-4o)...");
             if (this.openai) {
@@ -115,6 +119,9 @@ export class ModelRouter {
     }
 
     private async callOpenAI(history: any[]): Promise<string> {
+        // LOG REQUEST
+        this.logger.log('API_REQ', JSON.stringify(history), { model: this.OPENAI_MODEL });
+
         try {
             const start = Date.now();
             const response = await this.openai!.chat.completions.create({
@@ -133,6 +140,7 @@ export class ModelRouter {
 
             return content;
         } catch (error: any) {
+            this.logger.log('ERROR', `OpenAI API Error: ${error.message}`, { model: this.OPENAI_MODEL });
             console.error("❌ OpenAI API Error:", error.message);
             console.log("🔄 Falling back to DeepSeek...");
             if (this.deepseek) {
@@ -143,6 +151,9 @@ export class ModelRouter {
     }
 
     private async callDeepSeek(history: any[]): Promise<string> {
+        // LOG REQUEST
+        this.logger.log('API_REQ', JSON.stringify(history), { model: this.DEEPSEEK_MODEL });
+
         try {
             const start = Date.now();
             const response = await this.deepseek!.chat.completions.create({
@@ -161,6 +172,7 @@ export class ModelRouter {
 
             return content;
         } catch (error: any) {
+            this.logger.log('ERROR', `DeepSeek API Error: ${error.message}`, { model: this.DEEPSEEK_MODEL });
             console.error("❌ DeepSeek API Error:", error.message);
             console.log("🔄 Falling back to Local Ollama...");
             return this.callOllama(history);

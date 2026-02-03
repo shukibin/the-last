@@ -23,5 +23,5 @@ npm-debug.log*
 .env.local
 
 # Workspace files created by agent (optional - uncomment to track)
-# workspace/
+workspace/
 .env

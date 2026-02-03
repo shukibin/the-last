@@ -2,7 +2,7 @@ import sqlite3 from 'sqlite3';
 import fs from 'fs';
 import path from 'path';
 
-export type LogType = 'THOUGHT' | 'ACTION' | 'API_CALL' | 'USER' | 'SYSTEM';
+export type LogType = 'THOUGHT' | 'ACTION' | 'API_REQ' | 'API_CALL' | 'USER' | 'SYSTEM' | 'ERROR';
 
 interface LogMetrics {
     model?: string;
@@ -82,8 +82,10 @@ export class Logger {
         if (type === 'THOUGHT') icon = '🧠';
         if (type === 'ACTION') icon = '⚡';
         if (type === 'API_CALL') icon = '🌐';
+        if (type === 'API_REQ') icon = '➡️';
         if (type === 'USER') icon = '👤';
         if (type === 'SYSTEM') icon = '🖥️';
+        if (type === 'ERROR') icon = '❌';
 
         let md = `### ${icon} ${type} [${new Date().toLocaleTimeString()}]\n`;
 
