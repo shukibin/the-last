@@ -1,7 +1,8 @@
 import fs from 'fs';
+import path from 'path';
 
 export function logConversation(conversationId: string, data: { prompt: string; response: string }) {
-  const folderPath = `/app/workspace/conversations/${conversationId}`;
+  const folderPath = path.join(process.cwd(), 'workspace', 'conversations', conversationId);
   if (!fs.existsSync(folderPath)) {
     fs.mkdirSync(folderPath, { recursive: true });
   }

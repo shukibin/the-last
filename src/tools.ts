@@ -24,9 +24,11 @@ export const tools = {
     },
 
     write_file: async (filename: string, content: string) => {
-        // Security: Force writes to be within allowed directories
+        // Handle absolute paths, src/ paths, and workspace paths
         let targetPath: string;
-        if (filename.startsWith('src/')) {
+        if (filename.startsWith('/')) {
+            targetPath = filename; // Absolute path - use as-is
+        } else if (filename.startsWith('src/')) {
             targetPath = path.join(process.cwd(), filename);
         } else {
             targetPath = path.join(WORKSPACE_DIR, filename);
@@ -34,12 +36,14 @@ export const tools = {
 
         await fs.mkdir(path.dirname(targetPath), { recursive: true });
         await fs.writeFile(targetPath, content, 'utf-8');
-        return `File written to ${filename}`;
+        return `File written to ${targetPath}`;
     },
 
     read_file: async (filename: string) => {
         let targetPath: string;
-        if (filename.startsWith('src/')) {
+        if (filename.startsWith('/')) {
+            targetPath = filename; // Absolute path - use as-is
+        } else if (filename.startsWith('src/')) {
             targetPath = path.join(process.cwd(), filename);
         } else {
             targetPath = path.join(WORKSPACE_DIR, filename);
@@ -54,7 +58,15 @@ export const tools = {
     },
 
     list_files: async (dir: string = '.') => {
-        const targetDir = path.join(WORKSPACE_DIR, dir);
+        let targetDir: string;
+        if (dir.startsWith('/')) {
+            targetDir = dir; // Absolute path - use as-is
+        } else if (dir.startsWith('src/')) {
+            targetDir = path.join(process.cwd(), dir);
+        } else {
+            targetDir = path.join(WORKSPACE_DIR, dir);
+        }
+
         try {
             const files = await fs.readdir(targetDir);
             return files.join('\n');
