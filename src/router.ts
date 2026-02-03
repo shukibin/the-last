@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { Ollama } from 'ollama';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -10,23 +11,42 @@ export type ModelTier = 'SMART' | 'FAST';
 
 export class ModelRouter {
     private anthropic: Anthropic | null = null;
+    private deepseek: OpenAI | null = null;
+    private openai: OpenAI | null = null;
     private ollama: Ollama;
 
     // Models
     private readonly CLAUDE_MODEL = 'claude-3-5-sonnet-20241022';
-    private readonly OLLAMA_MODEL = 'qwen2.5-coder:14b'; // Local fallback/Fast
+    private readonly DEEPSEEK_MODEL = 'deepseek-chat';
+    private readonly OPENAI_MODEL = 'gpt-4o';
+    private readonly OLLAMA_MODEL = 'qwen2.5-coder:14b'; // Local fallback
 
     constructor() {
         // Initialize Ollama (Local)
         this.ollama = new Ollama({ host: 'http://host.docker.internal:11434' });
 
         // Initialize Anthropic (Cloud)
-        const apiKey = process.env.ANTHROPIC_API_KEY;
-        if (apiKey && apiKey.startsWith('sk-')) {
-            this.anthropic = new Anthropic({ apiKey });
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        if (anthropicKey && anthropicKey.startsWith('sk-')) {
+            this.anthropic = new Anthropic({ apiKey: anthropicKey });
             console.log("✅ Brain Upgrade: Anthropic (Claude 3.5 Sonnet) connected.");
-        } else {
-            console.warn("⚠️ No Anthropic API Key found in .env. using Local Ollama only.");
+        }
+
+        // Initialize DeepSeek (Cloud)
+        const deepseekKey = process.env.DEEPSEEK_API_KEY;
+        if (deepseekKey && deepseekKey.startsWith('sk-')) {
+            this.deepseek = new OpenAI({
+                baseURL: 'https://api.deepseek.com',
+                apiKey: deepseekKey
+            });
+            console.log("✅ Brain Upgrade: DeepSeek V3 connected.");
+        }
+
+        // Initialize OpenAI (Cloud)
+        const openaiKey = process.env.OPENAI_API_KEY;
+        if (openaiKey && openaiKey.startsWith('sk-')) {
+            this.openai = new OpenAI({ apiKey: openaiKey });
+            console.log("✅ Brain Upgrade: OpenAI (GPT-4o) connected.");
         }
     }
 
@@ -34,6 +54,9 @@ export class ModelRouter {
         // ROUTING LOGIC
         if (tier === 'SMART' && this.anthropic) {
             return this.callClaude(messages);
+        }
+        if (tier === 'FAST' && this.deepseek) {
+            return this.callDeepSeek(messages);
         }
         return this.callOllama(messages);
     }
@@ -63,6 +86,35 @@ export class ModelRouter {
 
         } catch (error: any) {
             console.error("❌ Claude API Error:", error.message);
+            console.log("🔄 Falling back to Local Ollama...");
+            return this.callOllama(history);
+        }
+    }
+
+    private async callOpenAI(history: any[]): Promise<string> {
+        try {
+            const response = await this.openai!.chat.completions.create({
+                messages: history,
+                model: this.OPENAI_MODEL,
+                response_format: { type: 'json_object' }
+            });
+            return response.choices[0].message.content || '';
+        } catch (error: any) {
+            console.error("❌ OpenAI API Error:", error.message);
+            return this.callOllama(history);
+        }
+    }
+
+    private async callDeepSeek(history: any[]): Promise<string> {
+        try {
+            const response = await this.deepseek!.chat.completions.create({
+                messages: history,
+                model: this.DEEPSEEK_MODEL,
+                response_format: { type: 'json_object' }
+            });
+            return response.choices[0].message.content || '';
+        } catch (error: any) {
+            console.error("❌ DeepSeek API Error:", error.message);
             console.log("🔄 Falling back to Local Ollama...");
             return this.callOllama(history);
         }
