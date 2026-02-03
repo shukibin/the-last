@@ -54,7 +54,10 @@ or
         model: MODEL,
         messages: this.history,
         format: 'json',
-        stream: false
+        stream: false,
+        options: {
+          num_ctx: 32768 // 32k context (Safe for 15GB RAM)
+        }
       });
       const content = response.message.content;
       this.history.push({ role: 'assistant', content });
