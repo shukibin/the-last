@@ -1,4 +1,5 @@
 import { ModelRouter } from './router.js';
+import { Logger } from './logger.js';
 
 export type Message = {
   role: 'system' | 'user' | 'assistant';
@@ -8,9 +9,11 @@ export type Message = {
 export class Agent {
   private history: Message[] = [];
   private router: ModelRouter;
+  private logger: Logger;
 
   constructor() {
-    this.router = new ModelRouter();
+    this.logger = new Logger();
+    this.router = new ModelRouter(this.logger);
     this.history.push({
       role: 'system',
       content: `You are "The Last", an autonomous AI engineer.
@@ -30,7 +33,13 @@ TOOLS:
 - run_command(command): Execute any shell command.
 - restart(): Restart to apply code changes.
 
+SKILLS (HOW-TO):
+- WRITE FILES SAFELY: Do NOT use \`echo 'ctx' > file\`. Use \`printf "line1\nline2" > file\` OR \`cat << EOF > file ...EOF\`.
+- FIX QUOTING: Your previous 'echo' commands failed due to nested quotes. Use double quotes for the outer shell command.
+- INSTALL PACKAGES: \`npm install puppeteer\` works. Do it before running scripts.
+
 AGENCY:
+- You are an autonomous engineer with FULL ACCESS (root).
 - If you need a tool (python, jq, vim, headless browser), INSTALL IT ('apt-get install -y ...').
 - If you need a script, WRITE IT and EXECUTE IT.
 - EXAMPLE: "Get news from CNN" -> Action: run_command("curl -s https://www.cnn.com | grep ...")
@@ -69,6 +78,17 @@ or
       const content = await this.router.chat(this.history, 'SMART');
 
       this.history.push({ role: 'assistant', content });
+
+      // LOGGING
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed.thought) {
+          this.logger.log('THOUGHT', parsed.thought);
+        }
+      } catch {
+        // Content might not be JSON, ignore
+      }
+
       return content;
     } catch (error: any) {
       console.error("LLM Error:", error);

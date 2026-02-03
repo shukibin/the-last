@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { Ollama } from 'ollama';
 import dotenv from 'dotenv';
 import path from 'path';
+import { Logger } from './logger.js';
 
 // Load .env from project root
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -14,6 +15,7 @@ export class ModelRouter {
     private deepseek: OpenAI | null = null;
     private openai: OpenAI | null = null;
     private ollama: Ollama;
+    private logger: Logger;
 
     // Models
     private readonly CLAUDE_MODEL = 'claude-3-5-sonnet-20241022';
@@ -21,7 +23,8 @@ export class ModelRouter {
     private readonly OPENAI_MODEL = 'gpt-4o';
     private readonly OLLAMA_MODEL = 'qwen2.5-coder:14b'; // Local fallback
 
-    constructor() {
+    constructor(logger: Logger) {
+        this.logger = logger;
         // Initialize Ollama (Local)
         this.ollama = new Ollama({ host: 'http://host.docker.internal:11434' });
 
@@ -67,6 +70,7 @@ export class ModelRouter {
             const systemMessage = history.find(m => m.role === 'system')?.content || '';
             const userMessages = history.filter(m => m.role !== 'system');
 
+            const start = Date.now();
             const msg = await this.anthropic!.messages.create({
                 model: this.CLAUDE_MODEL,
                 max_tokens: 8192,
@@ -79,10 +83,22 @@ export class ModelRouter {
 
             // Handle TextBlock (content is array)
             const textBlock = msg.content[0];
+            let responseText = '';
             if (textBlock.type === 'text') {
-                return textBlock.text;
+                responseText = textBlock.text;
+            } else {
+                responseText = JSON.stringify(msg.content);
             }
-            return JSON.stringify(msg.content);
+
+            // LOGGING
+            this.logger.log('API_CALL', responseText, {
+                model: this.CLAUDE_MODEL,
+                tokensIn: msg.usage.input_tokens,
+                tokensOut: msg.usage.output_tokens,
+                durationMs: Date.now() - start
+            });
+
+            return responseText;
 
         } catch (error: any) {
             console.error("❌ Claude API Error:", error.message);
@@ -93,12 +109,22 @@ export class ModelRouter {
 
     private async callOpenAI(history: any[]): Promise<string> {
         try {
+            const start = Date.now();
             const response = await this.openai!.chat.completions.create({
                 messages: history,
                 model: this.OPENAI_MODEL,
                 response_format: { type: 'json_object' }
             });
-            return response.choices[0].message.content || '';
+            const content = response.choices[0].message.content || '';
+
+            this.logger.log('API_CALL', content, {
+                model: this.OPENAI_MODEL,
+                tokensIn: response.usage?.prompt_tokens,
+                tokensOut: response.usage?.completion_tokens,
+                durationMs: Date.now() - start
+            });
+
+            return content;
         } catch (error: any) {
             console.error("❌ OpenAI API Error:", error.message);
             return this.callOllama(history);
@@ -107,12 +133,22 @@ export class ModelRouter {
 
     private async callDeepSeek(history: any[]): Promise<string> {
         try {
+            const start = Date.now();
             const response = await this.deepseek!.chat.completions.create({
                 messages: history,
                 model: this.DEEPSEEK_MODEL,
                 response_format: { type: 'json_object' }
             });
-            return response.choices[0].message.content || '';
+            const content = response.choices[0].message.content || '';
+
+            this.logger.log('API_CALL', content, {
+                model: this.DEEPSEEK_MODEL,
+                tokensIn: response.usage?.prompt_tokens,
+                tokensOut: response.usage?.completion_tokens,
+                durationMs: Date.now() - start
+            });
+
+            return content;
         } catch (error: any) {
             console.error("❌ DeepSeek API Error:", error.message);
             console.log("🔄 Falling back to Local Ollama...");
