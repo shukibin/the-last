@@ -1,1 +1,0 @@
-bash vix_prices.sh
