@@ -18,7 +18,7 @@ export class ModelRouter {
     private logger: Logger;
 
     // Models
-    private readonly CLAUDE_MODEL = 'claude-3-5-sonnet-latest';
+    private readonly CLAUDE_MODEL = 'claude-sonnet-4-5-20250929';
     private readonly DEEPSEEK_MODEL = 'deepseek-chat';
     private readonly OPENAI_MODEL = 'gpt-4o';
     private readonly OLLAMA_MODEL = 'qwen2.5-coder:14b'; // Local fallback
