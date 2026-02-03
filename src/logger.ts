@@ -79,51 +79,31 @@ export class Logger {
 
     private writeMdEntry(type: LogType, content: string, metrics?: LogMetrics, cost?: number) {
         const time = new Date().toLocaleTimeString();
-        let md = `\n[${time}] ${type}`;
+        let header = `[${time}] ${type}`;
+        if (metrics?.model) header += ` (${metrics.model})`;
 
-        if (metrics?.model) {
-            md += ` (${metrics.model})`;
-        }
-        md += `\n`;
+        let meta = '';
+        if (cost && cost > 0) meta = ` [Cost: $${cost.toFixed(5)}]`;
 
-        // Metrics Line (if cost > 0 or interesting)
-        if (cost && cost > 0) {
-            md += `> Cost: $${cost.toFixed(5)} | In: ${metrics?.tokensIn} | Out: ${metrics?.tokensOut}\n`;
-        }
+        let body = content.trim();
 
-        md += `\n`;
-
-        // Format Content
-        // 1. API_REQ: Don't dump full history. Just show the latest message.
+        // Format Content Scenarios
         if (type === 'API_REQ') {
             try {
                 const history = JSON.parse(content);
                 if (Array.isArray(history)) {
                     const lastMsg = history[history.length - 1];
-                    md += `**${lastMsg.role}:** ${lastMsg.content}\n`;
-                } else {
-                    md += `${content}\n`;
+                    // Single line for requests if possible
+                    body = `User: "${lastMsg.content.replace(/\n/g, ' ').substring(0, 100)}${lastMsg.content.length > 100 ? '...' : ''}"`;
                 }
-            } catch {
-                md += `${content}\n`;
-            }
+            } catch { }
         }
-        // 2. JSON Formatting for others
-        else if (type === 'API_CALL' || type === 'THOUGHT') {
-            try {
-                const obj = JSON.parse(content);
-                md += "```json\n" + JSON.stringify(obj, null, 2) + "\n```\n";
-            } catch {
-                md += `${content}\n`;
-            }
-        }
-        // 3. Standard Text
-        else {
-            md += `${content}\n`;
+        else if (type === 'ERROR') {
+            body = `!! ${body} !!`;
         }
 
-        md += `\n` + '-'.repeat(40) + `\n`; // Separator
-        this.writeToMd(md);
+        // Final Line: [10:00:00] API_CALL (gpt-4o) [Cost: $0.01]: Response text...
+        this.writeToMd(`${header}${meta}: ${body}\n`);
     }
 
     private writeToMd(str: string) {
