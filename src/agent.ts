@@ -69,8 +69,9 @@ or
   }
 
   pruneHistory() {
-    if (this.history.length > 20) {
-      this.history = [this.history[0], ...this.history.slice(-10)];
+    // 32k context allows for much longer history (~100 messages is safe)
+    if (this.history.length > 100) {
+      this.history = [this.history[0], ...this.history.slice(-50)];
     }
   }
 }
