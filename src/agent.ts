@@ -1,7 +1,4 @@
-import { Ollama } from 'ollama';
-
-const ollama = new Ollama({ host: 'http://host.docker.internal:11434' });
-const MODEL = 'qwen2.5-coder:14b';
+import { ModelRouter } from './router.js';
 
 export type Message = {
   role: 'system' | 'user' | 'assistant';
@@ -10,8 +7,10 @@ export type Message = {
 
 export class Agent {
   private history: Message[] = [];
+  private router: ModelRouter;
 
   constructor() {
+    this.router = new ModelRouter();
     this.history.push({
       role: 'system',
       content: `You are "The Last", an autonomous AI engineer.
@@ -66,21 +65,14 @@ or
   async chat(userInput: string): Promise<string> {
     this.history.push({ role: 'user', content: userInput });
     try {
-      const response = await ollama.chat({
-        model: MODEL,
-        messages: this.history,
-        format: 'json',
-        stream: false,
-        options: {
-          num_ctx: 16384 // 16k context (Safe for 18GB RAM)
-        }
-      });
-      const content = response.message.content;
+      // Use SMART model (Claude) by default for now
+      const content = await this.router.chat(this.history, 'SMART');
+
       this.history.push({ role: 'assistant', content });
       return content;
     } catch (error: any) {
       console.error("LLM Error:", error);
-      return JSON.stringify({ thought: "LLM error", reply: error.message });
+      return JSON.stringify({ thought: "LLM error", reply: "I encountered a brain error. Retrying..." });
     }
   }
 

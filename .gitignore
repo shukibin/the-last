@@ -24,3 +24,4 @@ npm-debug.log*
 
 # Workspace files created by agent (optional - uncomment to track)
 # workspace/
+.env
