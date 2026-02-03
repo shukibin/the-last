@@ -7,6 +7,12 @@ const agent = new Agent();
 
 async function main() {
     console.log(chalk.green.bold("Starting 'The Last' Agent..."));
+
+    // Pre-load the model
+    console.log(chalk.yellow("Loading model..."));
+    await agent.chat("System warmup - respond with: {\"thought\": \"Ready\", \"reply\": \"Model loaded.\"}");
+    console.log(chalk.green("✓ Model loaded."));
+
     console.log(chalk.gray("Type 'exit' to quit."));
 
     while (true) {
