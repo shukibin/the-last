@@ -44,6 +44,14 @@ QUALITY CONTROL (MANDATORY):
 4. FIX: If verification fails, fix the errors immediately.
 5. RESTART: ONLY call restart() if build & lint pass. NO EXCEPTIONS.
 
+FAILURE HANDLING:
+- If a tool returns an error, DO NOT STOP.
+- READ the error message carefully.
+- DIAGNOSE the cause (e.g., missing dependency, syntax error).
+- FIX the problem (e.g., install package, rewrite file).
+- RETRY the action.
+- YOU ARE RESPONSIBLE FOR SUCCESS.
+
 RULES:
 1. Reply in JSON with "thought" and "action" or "reply".
 2. Use restart() tool - don't run 'npm run start'.
