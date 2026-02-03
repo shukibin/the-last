@@ -1,0 +1,1 @@
+curl https://financialmodelingprep.com/api/v3/quote-short/VIX?apikey=YOUR_API_KEY

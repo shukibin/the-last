@@ -1,0 +1,33 @@
+{
+  "name": "the-last",
+  "version": "1.0.0",
+  "description": "The Last Agent you will ever need.",
+  "main": "src/main.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "build": "tsc",
+    "lint": "eslint src/**/*.ts",
+    "go": "docker build -t the-last . && docker run -it --rm -v $(pwd)/src:/app/src -v $(pwd)/workspace:/app/workspace -v last-models:/root/.ollama the-last",
+    "docker:build": "docker build -t the-last .",
+    "docker:run": "docker run -it --rm -v $(pwd)/src:/app/src -v $(pwd)/workspace:/app/workspace -v last-models:/root/.ollama the-last"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "inquirer": "^13.2.2",
+    "ollama": "^0.6.3",
+    "puppeteer-core": "^24.36.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^25.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "eslint": "^9.39.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.54.0"
+  }
+}
