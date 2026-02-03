@@ -102,7 +102,14 @@ export class ModelRouter {
 
         } catch (error: any) {
             console.error("❌ Claude API Error:", error.message);
-            console.log("🔄 Falling back to Local Ollama...");
+            console.log("🔄 Falling back to OpenAI (GPT-4o)...");
+            if (this.openai) {
+                return this.callOpenAI(history);
+            }
+            console.log("🔄 OpenAI not available. Falling back to DeepSeek...");
+            if (this.deepseek) {
+                return this.callDeepSeek(history);
+            }
             return this.callOllama(history);
         }
     }
@@ -127,6 +134,10 @@ export class ModelRouter {
             return content;
         } catch (error: any) {
             console.error("❌ OpenAI API Error:", error.message);
+            console.log("🔄 Falling back to DeepSeek...");
+            if (this.deepseek) {
+                return this.callDeepSeek(history);
+            }
             return this.callOllama(history);
         }
     }
