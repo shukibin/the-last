@@ -4,6 +4,29 @@ import { execSync } from 'child_process';
 import { Agent } from './agent.js';
 import { tools, ToolName } from './tools.js';
 
+// === SELF-HEALING: Console Observer ===
+// Capture warnings and errors so agent can see and fix them
+const recentIssues: string[] = [];
+const MAX_ISSUES = 5;
+
+const originalWarn = console.warn;
+const originalError = console.error;
+
+console.warn = (...args: any[]) => {
+    const msg = args.map(a => String(a)).join(' ');
+    recentIssues.push(`[WARN] ${msg}`);
+    if (recentIssues.length > MAX_ISSUES) recentIssues.shift();
+    originalWarn.apply(console, args);
+};
+
+console.error = (...args: any[]) => {
+    const msg = args.map(a => String(a)).join(' ');
+    recentIssues.push(`[ERROR] ${msg}`);
+    if (recentIssues.length > MAX_ISSUES) recentIssues.shift();
+    originalError.apply(console, args);
+};
+// === END SELF-HEALING ===
+
 const agent = new Agent();
 
 // Gather startup context for the agent
@@ -62,6 +85,12 @@ async function main() {
         // Inner Loop: ReAct Cycle (runs until agent sends 'reply')
         while (true) {
             process.stdout.write(chalk.yellow("Thinking... \r"));
+
+            // SELF-HEALING: Inject any captured warnings/errors
+            if (recentIssues.length > 0) {
+                currentInput = `SYSTEM ALERT - You caused these issues. Fix them before continuing:\n${recentIssues.join('\n')}\n\nOriginal task: ${currentInput}`;
+                recentIssues.length = 0; // Clear after injecting
+            }
 
             let responseJson: string;
             try {

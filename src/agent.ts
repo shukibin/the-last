@@ -86,10 +86,19 @@ TOOLS:
   changes to take effect. This recompiles and restarts the agent process.
 
 RESPONSE FORMAT:
+Respond with RAW JSON ONLY. No markdown, no code blocks, no backticks.
 Use "action" to execute tools. Use "reply" to communicate with the user.
 {"thought": "Your reasoning", "action": {"tool": "run_command", "args": ["..."]}}
 or
 {"thought": "Your reasoning", "reply": "Your message to the user"}
+
+SELF-HEALING:
+If you see "SYSTEM ALERT", you have caused errors or warnings in your own system.
+STOP your current task. Diagnose and fix the issue FIRST, then continue.
+Common fixes:
+- JSON parsing errors: Your response format is wrong. Use raw JSON only.
+- File errors: Check paths exist before reading/writing.
+- Command errors: Check syntax and permissions.
 
 GOLDEN RULE:
 NEVER say "I cannot". FIND A WAY.`
@@ -156,7 +165,12 @@ NEVER say "I cannot". FIND A WAY.`
 
   private async updateTaskState(responseContent: string): Promise<void> {
     try {
-      const parsed = JSON.parse(responseContent);
+      // Strip markdown code blocks if present (LLM sometimes wraps JSON)
+      const cleanedContent = responseContent
+        .replace(/^```(?:json)?\s*\n?/i, '')
+        .replace(/\n?```\s*$/i, '')
+        .trim();
+      const parsed = JSON.parse(cleanedContent);
       const now = new Date().toISOString();
 
       // If this is a new task from user input, update task and status
