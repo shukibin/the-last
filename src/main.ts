@@ -12,7 +12,7 @@ function getStartupContext(): string {
 
     try {
         const playbook = execSync('cat workspace/playbook.md 2>/dev/null || echo "No playbook yet."', { encoding: 'utf-8' });
-        context += `\n--- PLAYBOOK ---\n${playbook.slice(0, 2000)}\n`;
+        context += `\n--- PLAYBOOK ---\n${playbook}\n`;
     } catch { context += "\n--- PLAYBOOK ---\nNot found.\n"; }
 
     try {
@@ -22,7 +22,7 @@ function getStartupContext(): string {
 
     try {
         const recentLog = execSync('ls -t workspace/logs/*.md 2>/dev/null | head -1 | xargs cat 2>/dev/null | tail -50 || echo "No logs yet."', { encoding: 'utf-8' });
-        context += `\n--- RECENT LOG (last 50 lines) ---\n${recentLog.slice(0, 1500)}\n`;
+        context += `\n--- RECENT LOG (last 50 lines) ---\n${recentLog}\n`;
     } catch { context += "\n--- RECENT LOG ---\nNone yet.\n"; }
 
     context += "\n=== END CONTEXT ===\nYou are now ready. Greet the user briefly.";
@@ -50,14 +50,24 @@ async function main() {
         if (input.toLowerCase() === 'exit') process.exit(0);
 
         let currentInput = input;
-        let turnCount = 0;
-        const MAX_TURNS = 10; // Prevent infinite loops
 
-        // Inner Loop: ReAct Cycle
-        while (turnCount < MAX_TURNS) {
+        // Inner Loop: ReAct Cycle (runs until agent sends 'reply')
+        while (true) {
             process.stdout.write(chalk.yellow("Thinking... \r"));
 
-            let responseJson = await agent.chat(currentInput);
+            let responseJson: string;
+            try {
+                responseJson = await agent.chat(currentInput);
+            } catch (chatError: any) {
+                console.log(chalk.red("[ERROR] agent.chat() threw:"), chatError.message);
+                break;
+            }
+
+            if (!responseJson || responseJson.trim() === '') {
+                console.log(chalk.red("[ERROR] agent.chat() returned empty response"));
+                break;
+            }
+
             let response: any;
 
             // Strip markdown code blocks if present (LLM sometimes wraps JSON in ```json ... ```)
@@ -66,9 +76,8 @@ async function main() {
             try {
                 response = JSON.parse(responseJson);
             } catch {
-                console.log(chalk.red("Error parsing JSON from agent:"), responseJson);
+                console.log(chalk.red("Error parsing JSON from agent:"), responseJson.slice(0, 500));
                 currentInput = "Error: Your last response was not valid JSON. Please respond with ONLY raw JSON, no markdown.";
-                turnCount++;
                 continue;
             }
 
@@ -76,6 +85,8 @@ async function main() {
             if (response.thought) {
                 console.log(chalk.dim(`Thought: ${response.thought}`));
             }
+
+
 
             // 2. Handle Action vs Reply
             if (response.reply) {
@@ -101,23 +112,13 @@ async function main() {
 
                 console.log(chalk.dim(`Result: ${toolResult.slice(0, 100)}...`));
 
-                // SMART MEMORY: Truncate large outputs but tell agent full data is available
-                const MAX_OUTPUT = 3000;
-                let truncatedResult = toolResult;
-                if (toolResult.length > MAX_OUTPUT) {
-                    truncatedResult = toolResult.slice(0, MAX_OUTPUT) +
-                        `\n\n[OUTPUT TRUNCATED: ${toolResult.length - MAX_OUTPUT} more chars. If you need full output, save to file and use head/tail/grep]`;
-                }
-
                 // Feed result back to agent
-                currentInput = `Tool Output: ${truncatedResult}`;
+                currentInput = `Tool Output: ${toolResult}`;
             } else {
                 // No action, no reply - treat thought as the reply
                 console.log(chalk.green('Genesis:'), response.thought || "I'm not sure how to respond.");
                 break;
             }
-
-            turnCount++;
         }
     }
 }
