@@ -51,6 +51,20 @@ function getStartupContext(): string {
         context += `\n--- YOUR SKILLS ---\n${skills}\n`;
     } catch { context += "\n--- YOUR SKILLS ---\nNone yet.\n"; }
 
+    // Scan active tasks
+    try {
+        const taskDirs = execSync('ls workspace/tasks/ 2>/dev/null', { encoding: 'utf-8' }).trim().split('\n').filter(Boolean);
+        if (taskDirs.length > 0) {
+            context += `\n--- ACTIVE TASKS ---\n`;
+            for (const task of taskDirs) {
+                try {
+                    const progress = execSync(`cat workspace/tasks/${task}/progress.md 2>/dev/null | head -20`, { encoding: 'utf-8' });
+                    context += `\n### ${task}\n${progress}\n`;
+                } catch { /* skip if no progress.md */ }
+            }
+        }
+    } catch { /* no tasks folder */ }
+
     try {
         const recentLog = execSync('ls -t workspace/logs/*.md 2>/dev/null | head -1 | xargs cat 2>/dev/null | tail -50 || echo "No logs yet."', { encoding: 'utf-8' });
         context += `\n--- RECENT LOG (last 50 lines) ---\n${recentLog}\n`;
