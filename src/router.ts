@@ -77,7 +77,12 @@ export class ModelRouter {
             const msg = await this.anthropic!.messages.create({
                 model: this.CLAUDE_MODEL,
                 max_tokens: 8192,
-                system: systemMessage,
+                // Prompt caching: cache the system message for 90% cost reduction
+                system: [{
+                    type: 'text',
+                    text: systemMessage,
+                    cache_control: { type: 'ephemeral' }
+                }],
                 messages: userMessages.map(m => ({
                     role: m.role as 'user' | 'assistant',
                     content: m.content
@@ -93,8 +98,11 @@ export class ModelRouter {
                 responseText = JSON.stringify(msg.content);
             }
 
-            // LOG RESPONSE
-            this.logger.log('API_CALL', responseText, {
+            // LOG RESPONSE (including cache stats if available)
+            const cacheInfo = (msg.usage as any).cache_read_input_tokens
+                ? ` [Cache: ${(msg.usage as any).cache_read_input_tokens} read]`
+                : '';
+            this.logger.log('API_CALL', responseText + cacheInfo, {
                 model: this.CLAUDE_MODEL,
                 tokensIn: msg.usage.input_tokens,
                 tokensOut: msg.usage.output_tokens,
@@ -156,8 +164,17 @@ export class ModelRouter {
 
         try {
             const start = Date.now();
+
+            // DeepSeek requires 'json' in the prompt when using response_format
+            const messagesWithJsonHint = history.map((m, i) => {
+                if (m.role === 'system') {
+                    return { ...m, content: m.content + '\n\nRespond in JSON format.' };
+                }
+                return m;
+            });
+
             const response = await this.deepseek!.chat.completions.create({
-                messages: history,
+                messages: messagesWithJsonHint,
                 model: this.DEEPSEEK_MODEL,
                 response_format: { type: 'json_object' }
             });
@@ -181,6 +198,7 @@ export class ModelRouter {
 
     private async callOllama(history: any[]): Promise<string> {
         try {
+            const start = Date.now();
             const response = await this.ollama.chat({
                 model: this.OLLAMA_MODEL,
                 messages: history,
@@ -194,7 +212,9 @@ export class ModelRouter {
 
             this.logger.log('API_CALL', content, {
                 model: this.OLLAMA_MODEL,
-                durationMs: 0 // Ollama doesn't return timing easily
+                tokensIn: response.prompt_eval_count || 0,
+                tokensOut: response.eval_count || 0,
+                durationMs: Date.now() - start
             });
 
             return content;

@@ -83,7 +83,10 @@ export class Logger {
         if (metrics?.model) header += ` (${metrics.model})`;
 
         let meta = '';
-        if (cost && cost > 0) meta = ` [Cost: $${cost.toFixed(5)}]`;
+        if (metrics?.tokensIn || metrics?.tokensOut) {
+            meta += ` [Tokens: ${metrics.tokensIn || 0} → ${metrics.tokensOut || 0}]`;
+        }
+        if (cost && cost > 0) meta += ` [Cost: $${cost.toFixed(5)}]`;
 
         let body = content.trim();
 

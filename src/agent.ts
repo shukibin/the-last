@@ -82,8 +82,9 @@ NEVER say "I cannot". FIND A WAY.`
   async chat(userInput: string): Promise<string> {
     this.history.push({ role: 'user', content: userInput });
     try {
-      // Use SMART model (Claude) by default for now
-      const content = await this.router.chat(this.history, 'SMART');
+      // Smart routing: Use FAST for tool outputs, SMART for user messages
+      const tier = userInput.startsWith('Tool Output:') ? 'FAST' : 'SMART';
+      const content = await this.router.chat(this.history, tier);
 
       this.history.push({ role: 'assistant', content });
 
