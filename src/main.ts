@@ -10,6 +10,14 @@ const agent = new Agent();
 function getStartupContext(): string {
     let context = "=== STARTUP CONTEXT ===\n";
 
+    // CRITICAL: Check for crash from previous run
+    try {
+        const crashLog = execSync('cat workspace/last_crash.log 2>/dev/null', { encoding: 'utf-8' });
+        if (crashLog && crashLog.trim()) {
+            context += `\n--- ⚠️ PREVIOUS CRASH DETECTED ---\nYou crashed on your last run. FIX THIS FIRST before doing anything else:\n\n${crashLog}\n\n--- END CRASH LOG ---\n`;
+        }
+    } catch { /* No crash log, good! */ }
+
     try {
         const playbook = execSync('cat workspace/playbook.md 2>/dev/null || echo "No playbook yet."', { encoding: 'utf-8' });
         context += `\n--- PLAYBOOK ---\n${playbook}\n`;
